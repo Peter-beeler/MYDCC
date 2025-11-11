@@ -14,7 +14,7 @@ struct MYDCCApp: App {
                     LoadingView()
                         .transition(.opacity)
                 } else {
-                    MainTabView()
+                    AdaptiveMainView()
                         .environmentObject(throttleViewModel) // Provide ViewModel to all views
                         .transition(.opacity)
                 }

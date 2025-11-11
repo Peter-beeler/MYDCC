@@ -18,6 +18,17 @@ struct ContentView: View {
     @FocusState private var isAddressFocused: Bool
 
     var body: some View {
+        // Use iPad-optimized view on iPad, regular view on iPhone
+        if DeviceType.isiPad {
+            iPadThrottleView()
+                .environmentObject(viewModel)
+        } else {
+            iPhoneThrottleView
+        }
+    }
+
+    // MARK: - iPhone Throttle View
+    private var iPhoneThrottleView: some View {
         NavigationView {
             ZStack {
                 // Dark background

@@ -8,5 +8,14 @@
 	</array>
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>This app needs access to your local network to discover and control DCC-EX command stations.</string>
+	<key>UISupportedInterfaceOrientations~ipad</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+		<string>UIInterfaceOrientationPortraitUpsideDown</string>
+		<string>UIInterfaceOrientationLandscapeLeft</string>
+		<string>UIInterfaceOrientationLandscapeRight</string>
+	</array>
+	<key>UIRequiresFullScreen</key>
+	<false/>
 </dict>
 </plist>

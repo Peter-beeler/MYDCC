@@ -1,0 +1,4 @@
+# Ignore app icon files - replace with your own licensed icon
+MYDCC/Assets.xcassets/AppIcon.appiconset/*.png
+MYDCC/Assets.xcassets/AppIcon.appiconset/*.jpg
+!MYDCC/Assets.xcassets/AppIcon.appiconset/.gitkeep

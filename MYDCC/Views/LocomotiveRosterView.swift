@@ -22,40 +22,11 @@ struct LocomotiveRosterView: View {
                 if roster.locomotives.isEmpty {
                     emptyStateView
                 } else {
-                    List {
-                        ForEach(roster.locomotives) { loco in
-                            LocomotiveCard(locomotive: loco) {
-                                // Select this loco and switch to throttle tab
-                                viewModel.selectLocomotive(loco)
-                                roster.markAsUsed(loco)
-                            }
-                            .listRowBackground(Color.backgroundDark)
-                            .listRowSeparator(.hidden)
-                            .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
-                            .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                                Button(role: .destructive) {
-                                    withAnimation {
-                                        roster.deleteLocomotive(loco)
-                                    }
-                                } label: {
-                                    Label("Delete", systemImage: "trash")
-                                }
-
-                                Button {
-                                    selectedLoco = loco
-                                } label: {
-                                    Label("Edit", systemImage: "pencil")
-                                }
-                                .tint(.accentBlue)
-                            }
-                        }
-                        .onDelete { indexSet in
-                            roster.deleteLocomotives(at: indexSet)
-                        }
+                    if DeviceType.isiPad {
+                        iPadRosterView
+                    } else {
+                        iPhoneRosterView
                     }
-                    .listStyle(PlainListStyle())
-                    .scrollContentBackground(.hidden)
-                    .environment(\.editMode, $editMode)
                 }
             }
             .navigationTitle("My Locomotives")
@@ -89,6 +60,78 @@ struct LocomotiveRosterView: View {
                 LocomotiveEditorView(roster: roster, locomotive: loco)
             }
         }
+    }
+
+    // MARK: - iPad Roster View (Grid Layout)
+    private var iPadRosterView: some View {
+        ScrollView {
+            LazyVGrid(
+                columns: [
+                    GridItem(.adaptive(minimum: 320, maximum: 400), spacing: 20)
+                ],
+                spacing: 20
+            ) {
+                ForEach(roster.locomotives) { loco in
+                    LocomotiveCard(locomotive: loco) {
+                        viewModel.selectLocomotive(loco)
+                        roster.markAsUsed(loco)
+                    }
+                    .contextMenu {
+                        Button {
+                            selectedLoco = loco
+                        } label: {
+                            Label("Edit", systemImage: "pencil")
+                        }
+
+                        Button(role: .destructive) {
+                            withAnimation {
+                                roster.deleteLocomotive(loco)
+                            }
+                        } label: {
+                            Label("Delete", systemImage: "trash")
+                        }
+                    }
+                }
+            }
+            .padding(24)
+        }
+    }
+
+    // MARK: - iPhone Roster View (List Layout)
+    private var iPhoneRosterView: some View {
+        List {
+            ForEach(roster.locomotives) { loco in
+                LocomotiveCard(locomotive: loco) {
+                    viewModel.selectLocomotive(loco)
+                    roster.markAsUsed(loco)
+                }
+                .listRowBackground(Color.backgroundDark)
+                .listRowSeparator(.hidden)
+                .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
+                .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                    Button(role: .destructive) {
+                        withAnimation {
+                            roster.deleteLocomotive(loco)
+                        }
+                    } label: {
+                        Label("Delete", systemImage: "trash")
+                    }
+
+                    Button {
+                        selectedLoco = loco
+                    } label: {
+                        Label("Edit", systemImage: "pencil")
+                    }
+                    .tint(.accentBlue)
+                }
+            }
+            .onDelete { indexSet in
+                roster.deleteLocomotives(at: indexSet)
+            }
+        }
+        .listStyle(PlainListStyle())
+        .scrollContentBackground(.hidden)
+        .environment(\.editMode, $editMode)
     }
 
     private var emptyStateView: some View {

@@ -22,13 +22,13 @@ struct ConsoleView: View {
                     // Console output
                     ScrollViewReader { proxy in
                         ScrollView {
-                            LazyVStack(alignment: .leading, spacing: 4) {
+                            LazyVStack(alignment: .leading, spacing: DeviceType.isiPad ? 8 : 4) {
                                 ForEach(Array(viewModel.consoleMessages.enumerated()), id: \.offset) { index, message in
                                     ConsoleMessageRow(message: message)
                                         .id(index)
                                 }
                             }
-                            .padding()
+                            .adaptivePadding()
                         }
                         .onChange(of: viewModel.consoleMessages.count) { _, _ in
                             if autoScroll, let lastIndex = viewModel.consoleMessages.indices.last {

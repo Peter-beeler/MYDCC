@@ -25,14 +25,41 @@ struct ProgrammingView: View {
         (viewModel.trackB.mode == .program && viewModel.trackB.powerState == .on)
     }
 
+    @Environment(\.horizontalSizeClass) var horizontalSizeClass
+
     var body: some View {
         NavigationView {
             ZStack {
                 Color.backgroundDark.ignoresSafeArea()
 
                 if !isProgramTrackActive {
-                    // Show message when no program track is active
-                    VStack(spacing: 16) {
+                    inactiveTrackView
+                } else {
+                    if DeviceType.isiPad && horizontalSizeClass == .regular {
+                        iPadProgrammingLayout
+                    } else {
+                        iPhoneProgrammingLayout
+                    }
+                }
+            }
+            .navigationTitle("Decoder Programming")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(Color.backgroundDark, for: .navigationBar)
+            .toolbarBackground(.visible, for: .navigationBar)
+            .alert("Programming Result", isPresented: $showAlert) {
+                Button("OK", role: .cancel) { }
+            } message: {
+                Text(alertMessage)
+            }
+            .onChange(of: viewModel.programmingResponse) { _, newResponse in
+                handleProgrammingResponse(newResponse)
+            }
+        }
+    }
+
+    // MARK: - Inactive Track View
+    private var inactiveTrackView: some View {
+        VStack(spacing: 16) {
                         Image(systemName: "exclamationmark.triangle.fill")
                             .font(.system(size: 60))
                             .foregroundColor(.cautionYellow)
@@ -61,79 +88,123 @@ struct ProgrammingView: View {
                         }
                         .padding(.horizontal)
                     }
-                } else {
-                    ScrollView {
-                        VStack(spacing: 20) {
-                            // Active track indicator
-                            HStack(spacing: 8) {
-                                Circle()
-                                    .fill(Color.successGreen)
-                                    .frame(width: 12, height: 12)
+    }
 
-                                Text(viewModel.trackA.mode == .program && viewModel.trackA.powerState == .on
-                                     ? "Track A: Programming Mode Active"
-                                     : "Track B: Programming Mode Active")
-                                    .font(.subheadline)
-                                    .foregroundColor(.textSecondary)
+    // MARK: - iPad Programming Layout (Split View)
+    private var iPadProgrammingLayout: some View {
+        HStack(spacing: 0) {
+            // Left side: Programming controls
+            ScrollView {
+                VStack(spacing: 24) {
+                    trackIndicator
 
-                                Spacer()
-                            }
-                            .padding(.horizontal)
+                    // Tab selector
+                    Picker("Function", selection: $selectedTab) {
+                        Text("Decoder Address").tag(0)
+                        Text("CV Operations").tag(1)
+                    }
+                    .pickerStyle(SegmentedPickerStyle())
 
-                            // Tab selector
-                            Picker("Function", selection: $selectedTab) {
-                                Text("Decoder Address").tag(0)
-                                Text("CV Operations").tag(1)
-                            }
-                            .pickerStyle(SegmentedPickerStyle())
-                            .padding(.horizontal)
+                    if selectedTab == 0 {
+                        decoderAddressView
+                    } else {
+                        cvOperationsView
+                    }
 
-                            if selectedTab == 0 {
-                                // Decoder Address Programming
-                                decoderAddressView
-                            } else {
-                                // CV Read/Write
-                                cvOperationsView
-                            }
+                    safetyWarning
+                }
+                .adaptivePadding()
+            }
+            .frame(maxWidth: .infinity)
 
-                            // Safety warning
-                            HStack(spacing: 8) {
-                                Image(systemName: "info.circle.fill")
-                                    .font(.caption)
-                                VStack(alignment: .leading, spacing: 4) {
-                                    Text("Safety Reminder")
-                                        .font(.caption)
-                                        .fontWeight(.bold)
-                                    Text("Ensure only ONE locomotive is on the programming track")
-                                        .font(.caption2)
-                                }
-                            }
-                            .foregroundColor(.cautionYellow)
-                            .padding()
-                            .background(Color.cautionYellow.opacity(0.1))
-                            .cornerRadius(12)
-                            .padding(.horizontal)
+            Divider()
+                .background(Color.borderDark)
+
+            // Right side: Console for real-time feedback
+            VStack(spacing: 12) {
+                HStack {
+                    Text("Console")
+                        .font(.headline)
+                        .foregroundColor(.textPrimary)
+                    Spacer()
+                }
+
+                ScrollView {
+                    LazyVStack(alignment: .leading, spacing: 8) {
+                        ForEach(Array(viewModel.consoleMessages.suffix(50).enumerated()), id: \.element.id) { _, message in
+                            ConsoleMessageRow(message: message)
                         }
-                        .padding(.vertical)
                     }
                 }
             }
-            .navigationTitle("Decoder Programming")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbarBackground(Color.backgroundDark, for: .navigationBar)
-            .toolbarBackground(.visible, for: .navigationBar)
-            .alert("Programming Result", isPresented: $showAlert) {
-                Button("OK", role: .cancel) { }
-            } message: {
-                Text(alertMessage)
-            }
-            .onChange(of: viewModel.programmingResponse) { _, newResponse in
-                handleProgrammingResponse(newResponse)
-            }
+            .frame(maxWidth: .infinity)
+            .adaptivePadding()
         }
     }
 
-    // Handle programming responses from the station
+    // MARK: - iPhone Programming Layout
+    private var iPhoneProgrammingLayout: some View {
+        ScrollView {
+            VStack(spacing: 20) {
+                trackIndicator
+
+                // Tab selector
+                Picker("Function", selection: $selectedTab) {
+                    Text("Decoder Address").tag(0)
+                    Text("CV Operations").tag(1)
+                }
+                .pickerStyle(SegmentedPickerStyle())
+                .padding(.horizontal)
+
+                if selectedTab == 0 {
+                    decoderAddressView
+                } else {
+                    cvOperationsView
+                }
+
+                safetyWarning
+            }
+            .padding(.vertical)
+        }
+    }
+
+    // MARK: - Shared Components
+    private var trackIndicator: some View {
+        HStack(spacing: 8) {
+            Circle()
+                .fill(Color.successGreen)
+                .frame(width: 12, height: 12)
+
+            Text(viewModel.trackA.mode == .program && viewModel.trackA.powerState == .on
+                 ? "Track A: Programming Mode Active"
+                 : "Track B: Programming Mode Active")
+                .font(.subheadline)
+                .foregroundColor(.textSecondary)
+
+            Spacer()
+        }
+    }
+
+    private var safetyWarning: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "info.circle.fill")
+                .font(.caption)
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Safety Reminder")
+                    .font(.caption)
+                    .fontWeight(.bold)
+                Text("Ensure only ONE locomotive is on the programming track")
+                    .font(.caption2)
+            }
+        }
+        .foregroundColor(.cautionYellow)
+        .padding()
+        .background(Color.cautionYellow.opacity(0.1))
+        .cornerRadius(12)
+        .padding(.horizontal)
+    }
+
+    // MARK: - Handle programming responses from the station
     private func handleProgrammingResponse(_ response: ProgrammingResponse?) {
         guard let response = response else { return }
 

@@ -12,110 +12,151 @@ struct SettingsView: View {
     @AppStorage("isHapticFeedbackOn") private var isHapticFeedbackOn = true
     @State private var defaultSpeedSteps = 128
 
+    @Environment(\.horizontalSizeClass) var horizontalSizeClass
+
     var body: some View {
         NavigationView {
             ZStack {
                 Color.backgroundDark.edgesIgnoringSafeArea(.all)
 
                 ScrollView {
-                    VStack(alignment: .leading, spacing: 24) {
-
-                        // Connection Status Section
-                        Section(header: SectionHeader(title: "Connection Status")) {
-                            CardView {
-                                ConnectionStatusCard()
-                            }
-                        }
-
-                        // Discovered Stations Section
-                        if !viewModel.discoveredStations.isEmpty {
-                            Section(header: SectionHeader(title: "Discovered Stations")) {
-                                CardView {
-                                    VStack(spacing: 0) {
-                                        ForEach(Array(viewModel.discoveredStations.enumerated()), id: \.element.id) { index, station in
-                                            VStack(spacing: 0) {
-                                                SettingsRow(
-                                                    title: station.name,
-                                                    value: station.ipAddress,
-                                                    icon: "train.side.front.car",
-                                                    badge: station.isOnline ? "Online" : "Offline",
-                                                    badgeColor: station.isOnline ? .successGreen : .dangerRed
-                                                )
-
-                                                if index < viewModel.discoveredStations.count - 1 {
-                                                    Divider()
-                                                        .background(Color.borderDark)
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-
-                        // General Settings Section
-                        Section(header: SectionHeader(title: "General")) {
-                            CardView {
-                                VStack(spacing: 0) {
-                                    Picker("Default Speed Steps", selection: $defaultSpeedSteps) {
-                                        Text("28").tag(28)
-                                        Text("128").tag(128)
-                                    }
-                                    .pickerStyle(SegmentedPickerStyle())
-                                    .padding()
-
-                                    Divider().background(Color.borderDark)
-
-                                    Toggle("Haptic Feedback", isOn: $isHapticFeedbackOn)
-                                        .padding()
-                                        .foregroundColor(.textPrimary)
-                                }
-                            }
-                        }
-
-                        // About Section
-                        Section(header: SectionHeader(title: "About")) {
-                            CardView {
-                                VStack(spacing: 12) {
-                                    HStack {
-                                        Text("Version")
-                                            .foregroundColor(.textSecondary)
-                                        Spacer()
-                                        Text("1.0.0")
-                                            .foregroundColor(.textPrimary)
-                                    }
-
-                                    Divider().background(Color.borderDark)
-
-                                    HStack {
-                                        Text("DCC-EX Protocol")
-                                            .foregroundColor(.textSecondary)
-                                        Spacer()
-                                        Text("WiThrottle")
-                                            .foregroundColor(.textPrimary)
-                                    }
-
-                                    Divider().background(Color.borderDark)
-
-                                    HStack {
-                                        Text("Port")
-                                            .foregroundColor(.textSecondary)
-                                        Spacer()
-                                        Text("2560")
-                                            .foregroundColor(.textPrimary)
-                                    }
-                                }
-                                .padding()
-                            }
-                        }
-
-                        Spacer(minLength: 40)
+                    if DeviceType.isiPad && horizontalSizeClass == .regular {
+                        iPadTwoColumnLayout
+                    } else {
+                        iPhoneSingleColumnLayout
                     }
-                    .padding(.top)
                 }
             }
             .navigationTitle("Settings")
             .navigationBarTitleDisplayMode(.large)
+        }
+    }
+
+    // MARK: - iPad Two Column Layout
+    private var iPadTwoColumnLayout: some View {
+        HStack(alignment: .top, spacing: 24) {
+            // Left column
+            VStack(alignment: .leading, spacing: 24) {
+                connectionStatusSection
+                generalSettingsSection
+            }
+            .frame(maxWidth: .infinity)
+
+            // Right column
+            VStack(alignment: .leading, spacing: 24) {
+                discoveredStationsSection
+                aboutSection
+            }
+            .frame(maxWidth: .infinity)
+        }
+        .adaptivePadding()
+    }
+
+    // MARK: - iPhone Single Column Layout
+    private var iPhoneSingleColumnLayout: some View {
+        VStack(alignment: .leading, spacing: 24) {
+            connectionStatusSection
+            discoveredStationsSection
+            generalSettingsSection
+            aboutSection
+            Spacer(minLength: 40)
+        }
+        .padding(.top)
+    }
+
+    // MARK: - Sections
+    private var connectionStatusSection: some View {
+        Section(header: SectionHeader(title: "Connection Status")) {
+            CardView {
+                ConnectionStatusCard()
+            }
+        }
+    }
+
+    private var discoveredStationsSection: some View {
+        Group {
+            if !viewModel.discoveredStations.isEmpty {
+                Section(header: SectionHeader(title: "Discovered Stations")) {
+                    CardView {
+                        VStack(spacing: 0) {
+                            ForEach(Array(viewModel.discoveredStations.enumerated()), id: \.element.id) { index, station in
+                                VStack(spacing: 0) {
+                                    SettingsRow(
+                                        title: station.name,
+                                        value: station.ipAddress,
+                                        icon: "train.side.front.car",
+                                        badge: station.isOnline ? "Online" : "Offline",
+                                        badgeColor: station.isOnline ? .successGreen : .dangerRed
+                                    )
+
+                                    if index < viewModel.discoveredStations.count - 1 {
+                                        Divider()
+                                            .background(Color.borderDark)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private var generalSettingsSection: some View {
+        Section(header: SectionHeader(title: "General")) {
+            CardView {
+                VStack(spacing: 0) {
+                    Picker("Default Speed Steps", selection: $defaultSpeedSteps) {
+                        Text("28").tag(28)
+                        Text("128").tag(128)
+                    }
+                    .pickerStyle(SegmentedPickerStyle())
+                    .padding()
+
+                    Divider().background(Color.borderDark)
+
+                    Toggle("Haptic Feedback", isOn: $isHapticFeedbackOn)
+                        .padding()
+                        .foregroundColor(.textPrimary)
+                }
+            }
+        }
+    }
+
+    private var aboutSection: some View {
+        Section(header: SectionHeader(title: "About")) {
+            CardView {
+                VStack(spacing: 12) {
+                    HStack {
+                        Text("Version")
+                            .foregroundColor(.textSecondary)
+                        Spacer()
+                        Text("1.0.0")
+                            .foregroundColor(.textPrimary)
+                    }
+
+                    Divider().background(Color.borderDark)
+
+                    HStack {
+                        Text("DCC-EX Protocol")
+                            .foregroundColor(.textSecondary)
+                        Spacer()
+                        Text("WiThrottle")
+                            .foregroundColor(.textPrimary)
+                    }
+
+                    Divider().background(Color.borderDark)
+
+                    HStack {
+                        Text("Port")
+                            .foregroundColor(.textSecondary)
+                        Spacer()
+                        Text("2560")
+                            .foregroundColor(.textPrimary)
+                    }
+                }
+                .padding()
+            }
         }
     }
 }
